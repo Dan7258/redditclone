@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS "users" (
 CREATE TABLE IF NOT EXISTS posts (
                                      id SERIAL PRIMARY KEY,
                                      title VARCHAR(255),
-                                     author INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                                     author_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
                                      category VARCHAR(100),
                                      score INTEGER DEFAULT 0,
                                      views INTEGER DEFAULT 0,

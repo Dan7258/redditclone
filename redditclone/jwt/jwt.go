@@ -1,9 +1,9 @@
 package jwt
 
 import (
-	"context"
 	"errors"
 	"github.com/golang-jwt/jwt/v5"
+	"log"
 	"net/http"
 	"os"
 	"redditclone/internal/models"
@@ -23,7 +23,7 @@ var secretKey []byte
 
 type Claims struct {
 	Username string `json:"username"`
-	ID    uint    `json:"id"`
+	ID       uint   `json:"id"`
 	jwt.RegisteredClaims
 }
 
@@ -59,8 +59,14 @@ func ParseClaims(token *jwt.Token) (Claims, error) {
 	if !ok {
 		return *claims, InvalidTokenClaimsError
 	}
-	claims.Username = mapClaims["username"].(string)
-	claims.ID = uint(mapClaims["id"].(float64))
+	user := mapClaims["user"].(map[string]interface{})
+	claims.Username = user["username"].(string)
+	userID := user["id"].(string)
+	id, err := strconv.Atoi(userID)
+	if err != nil {
+		return *claims, InvalidTokenClaimsError
+	}
+	claims.ID = uint(id)
 	return *claims, nil
 }
 
@@ -72,11 +78,7 @@ func GenerateJWT(user *models.User) (string, error) {
 		},
 		"exp": time.Now().Add(24 * time.Hour).Unix(),
 	}
+	log.Println(user)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(secretKey)
-}
-
-func GetUserFromContext(ctx context.Context) (*models.User, bool) {
-	user, ok := ctx.Value("user").(*models.User)
-	return user, ok
 }

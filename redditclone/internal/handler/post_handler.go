@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"redditclone/internal/middleware"
 	"redditclone/internal/models"
+	"redditclone/jwt"
 	"strconv"
 )
 
@@ -16,18 +16,19 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	user, ok := middleware.GetUserFromContext(r.Context())
+
+	claims, ok := r.Context().Value("user").(jwt.Claims)
 	if !ok {
 		jsonError(w, http.StatusUnauthorized, "user not authorized")
 		return
 	}
-	post.Author = user
-	newPost, err := h.Models.PostMemory.AddPost(post)
+	post.AuthorID = claims.ID
+	err = h.db.CreatePost(post)
 	if err != nil {
 		jsonError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	resp, err := json.Marshal(newPost)
+	resp, err := json.Marshal(post)
 	if err != nil {
 		jsonError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -39,15 +40,13 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetPosts(w http.ResponseWriter, r *http.Request) {
-	posts := h.Models.PostMemory.GetAllPosts()
-	resp, err := json.Marshal(posts)
+	posts := h.db.GetAllPosts()
+	err := json.NewEncoder(w).Encode(posts)
 	if err != nil {
 		jsonError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
 }
 
 func (h *Handler) GetPostsByCategory(w http.ResponseWriter, r *http.Request) {
@@ -56,15 +55,13 @@ func (h *Handler) GetPostsByCategory(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, "category not provided")
 		return
 	}
-	post := h.Models.PostMemory.GetPostsByCategory(category)
-	resp, err := json.Marshal(post)
+	posts := h.db.GetPostsByCategory(category)
+	err := json.NewEncoder(w).Encode(posts)
 	if err != nil {
 		jsonError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
 }
 
 func (h *Handler) DeletePostById(w http.ResponseWriter, r *http.Request) {
@@ -75,21 +72,25 @@ func (h *Handler) DeletePostById(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, "id not provided")
 		return
 	}
-	user, ok := middleware.GetUserFromContext(r.Context())
+	claims, ok := r.Context().Value("user").(jwt.Claims)
 	if !ok {
 		jsonError(w, http.StatusUnauthorized, "user not authorized")
 		return
 	}
-	post := h.Models.PostMemory.GetPostById(id)
+	post, err := h.db.GetPostByID(claims.ID)
 	if post != nil {
 		jsonError(w, http.StatusInternalServerError, fmt.Sprintf("post with id: %d not exists", id))
 		return
 	}
-	if post.Author.Id != user.Id {
+	if post.AuthorID != claims.ID {
 		jsonError(w, http.StatusForbidden, "Forbidden")
 		return
 	}
-	h.Models.PostMemory.DeletePostById(id)
+	err = h.db.DeletePostByID(uint(id))
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(`{"message": "success"}`))

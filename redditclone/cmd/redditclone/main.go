@@ -6,7 +6,6 @@ import (
 	"redditclone/internal/config"
 	"redditclone/internal/handler"
 	"redditclone/internal/middleware"
-	"redditclone/internal/models"
 	"redditclone/internal/repository"
 	"redditclone/jwt"
 	"time"
@@ -46,7 +45,7 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
-	err := server.ListenAndServe()
+	err = server.ListenAndServe()
 	if err != nil {
 		log.Fatal(err)
 	}
