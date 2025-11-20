@@ -162,3 +162,34 @@ func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 }
+
+func (h *Handler) DeleteCommentById(w http.ResponseWriter, r *http.Request) {
+	postIdStr := r.PathValue("post_id")
+	commentIdStr := r.PathValue("comment_id")
+	if postIdStr == "" || commentIdStr == "" {
+		jsonError(w, http.StatusBadRequest, "post_id or comment_id not provided")
+		return
+	}
+	postId, err := strconv.Atoi(postIdStr)
+	if err != nil {
+		jsonError(w, http.StatusBadRequest, "post_id required")
+		return
+	}
+	commentId, err := strconv.Atoi(commentIdStr)
+	if err != nil {
+		jsonError(w, http.StatusBadRequest, "comment_id required")
+		return
+	}
+	err = h.db.DeleteCommentByID(uint(commentId))
+	post, err := h.db.GetPostByID(uint(postId))
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	err = json.NewEncoder(w).Encode(post)
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+}

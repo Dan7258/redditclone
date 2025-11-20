@@ -17,4 +17,5 @@ type Model interface {
 	DeletePostByID(id uint) error
 
 	CreateComment(comment *Comment) error
+	DeleteCommentByID(id uint) error
 }

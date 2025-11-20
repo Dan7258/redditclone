@@ -37,6 +37,7 @@ func main() {
 	authMux.HandleFunc("POST /api/post/{id}", h.CreateComment)
 	authMux.HandleFunc("POST /api/posts", h.CreatePost)
 	authMux.HandleFunc("DELETE /api/post/{id}", h.DeletePostById)
+	authMux.HandleFunc("DELETE /api/post/{post_id}/{comment_id}", h.DeleteCommentById)
 
 	mux.Handle("/api/", middleware.Auth(authMux))
 	server := &http.Server{
