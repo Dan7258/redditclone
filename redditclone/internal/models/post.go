@@ -8,7 +8,8 @@ import (
 type Post struct {
 	ID               uint      `gorm:"primary_key;auto_increment" json:"id"`
 	Title            string    `json:"title,omitempty"`
-	AuthorID         uint      `json:"author_id"`
+	AuthorID         uint      `gorm:"not null" json:"-"`
+	Author           User      `gorm:"foreignkey:AuthorID" json:"author"`
 	Category         string    `json:"category,omitempty"`
 	Score            int       `json:"score,omitempty"`
 	Views            int       `json:"views,omitempty"`
@@ -16,13 +17,14 @@ type Post struct {
 	Text             string    `json:"text,omitempty"`
 	UpvotePercentage int       `json:"upvote_percentage,omitempty"`
 	Created          time.Time `json:"created,omitempty"`
+	Comments         []Comment `gorm:"foreignkey:PostID" json:"comments,omitempty"`
 }
 
 func (p *Post) MarshalJSON() ([]byte, error) {
 	data := map[string]interface{}{
 		"id":                p.ID,
 		"title":             p.Title,
-		"author_id":         p.AuthorID,
+		"author":            p.Author,
 		"category":          p.Category,
 		"score":             p.Score,
 		"views":             p.Views,
@@ -30,6 +32,7 @@ func (p *Post) MarshalJSON() ([]byte, error) {
 		"text":              p.Text,
 		"upvote_percentage": p.UpvotePercentage,
 		"created":           p.Created,
+		"comments":          p.Comments,
 	}
 	if p.Type == "link" {
 		data["url"] = data["text"].(string)

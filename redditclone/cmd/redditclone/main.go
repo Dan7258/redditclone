@@ -33,7 +33,7 @@ func main() {
 	mux.HandleFunc("POST /api/register", h.RegisterUser)
 	mux.HandleFunc("POST /api/login", h.LoginUser)
 	mux.HandleFunc("GET /api/posts/{category}", h.GetPostsByCategory)
-
+	mux.HandleFunc("GET /api/post/{id}", h.GetPostById)
 	authMux.HandleFunc("POST /api/posts", h.CreatePost)
 	authMux.HandleFunc("DELETE /api/post/{id}", h.DeletePostById)
 

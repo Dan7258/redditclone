@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"redditclone/internal/models"
 	"redditclone/jwt"
@@ -28,6 +29,7 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	log.Println(post.AuthorID)
 	resp, err := json.Marshal(post)
 	if err != nil {
 		jsonError(w, http.StatusInternalServerError, err.Error())
@@ -42,6 +44,26 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetPosts(w http.ResponseWriter, r *http.Request) {
 	posts := h.db.GetAllPosts()
 	err := json.NewEncoder(w).Encode(posts)
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+}
+
+func (h *Handler) GetPostById(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	if idStr == "" {
+		jsonError(w, http.StatusBadRequest, "category not provided")
+		return
+	}
+	id, err := strconv.Atoi(idStr)
+	post, err := h.db.GetPostByID(uint(id))
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	err = json.NewEncoder(w).Encode(post)
 	if err != nil {
 		jsonError(w, http.StatusInternalServerError, err.Error())
 		return
