@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"redditclone/internal/models"
 	"redditclone/jwt"
@@ -29,7 +28,6 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	log.Println(post.AuthorID)
 	resp, err := json.Marshal(post)
 	if err != nil {
 		jsonError(w, http.StatusInternalServerError, err.Error())
@@ -116,4 +114,51 @@ func (h *Handler) DeletePostById(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(`{"message": "success"}`))
+}
+
+func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
+	comment := new(models.Comment)
+	message := struct {
+		Comment string `json:"comment"`
+	}{}
+	err := json.NewDecoder(r.Body).Decode(&message)
+	if err != nil {
+		jsonError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	idStr := r.PathValue("id")
+	if idStr == "" {
+		jsonError(w, http.StatusBadRequest, "id required")
+		return
+	}
+	postId, err := strconv.Atoi(idStr)
+	if err != nil {
+		jsonError(w, http.StatusBadRequest, "id required")
+		return
+	}
+	claims, ok := r.Context().Value("user").(jwt.Claims)
+	if !ok {
+		jsonError(w, http.StatusUnauthorized, "user not authorized")
+		return
+	}
+	comment.AuthorID = claims.ID
+	comment.PostID = uint(postId)
+	comment.Body = message.Comment
+
+	err = h.db.CreateComment(comment)
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	post, err := h.db.GetPostByID(uint(postId))
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	err = json.NewEncoder(w).Encode(post)
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
 }

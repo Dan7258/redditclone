@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS posts (
 CREATE TABLE IF NOT EXISTS comments (
                                         id SERIAL PRIMARY KEY,
                                         post_id INTEGER REFERENCES posts(id),
-                                        author INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                                        author_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
                                         body TEXT,
                                         created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
