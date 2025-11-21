@@ -69,6 +69,21 @@ func (h *Handler) GetPostById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
+func (h *Handler) GetPostByUserLogin(w http.ResponseWriter, r *http.Request) {
+	login := r.PathValue("login")
+	if login == "" {
+		jsonError(w, http.StatusBadRequest, "category not provided")
+		return
+	}
+	posts := h.db.GetPostsByUsername(login)
+	err := json.NewEncoder(w).Encode(posts)
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+}
+
 func (h *Handler) GetPostsByCategory(w http.ResponseWriter, r *http.Request) {
 	category := r.PathValue("category")
 	if category == "" {
@@ -192,4 +207,139 @@ func (h *Handler) DeleteCommentById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+}
+
+func (h *Handler) Upvote(w http.ResponseWriter, r *http.Request) {
+	postIdStr := r.PathValue("post_id")
+	if postIdStr == "" {
+		jsonError(w, http.StatusBadRequest, "post_id not provided")
+		return
+	}
+	postId, err := strconv.Atoi(postIdStr)
+	if err != nil {
+		jsonError(w, http.StatusBadRequest, "post_id required")
+		return
+	}
+	claims := r.Context().Value("user").(jwt.Claims)
+	err = h.Vote(1, claims.ID, uint(postId))
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	post, err := h.UpdatePostScore(uint(postId))
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	err = json.NewEncoder(w).Encode(post)
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+}
+
+func (h *Handler) Downvote(w http.ResponseWriter, r *http.Request) {
+	postIdStr := r.PathValue("post_id")
+	if postIdStr == "" {
+		jsonError(w, http.StatusBadRequest, "post_id not provided")
+		return
+	}
+	postId, err := strconv.Atoi(postIdStr)
+	if err != nil {
+		jsonError(w, http.StatusBadRequest, "post_id required")
+		return
+	}
+	claims := r.Context().Value("user").(jwt.Claims)
+	err = h.Vote(-1, claims.ID, uint(postId))
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	post, err := h.UpdatePostScore(uint(postId))
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	err = json.NewEncoder(w).Encode(post)
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+}
+
+func (h *Handler) Unvote(w http.ResponseWriter, r *http.Request) {
+	postIdStr := r.PathValue("post_id")
+	if postIdStr == "" {
+		jsonError(w, http.StatusBadRequest, "post_id not provided")
+		return
+	}
+	postId, err := strconv.Atoi(postIdStr)
+	if err != nil {
+		jsonError(w, http.StatusBadRequest, "post_id required")
+		return
+	}
+	claims := r.Context().Value("user").(jwt.Claims)
+	err = h.Vote(0, claims.ID, uint(postId))
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	post, err := h.UpdatePostScore(uint(postId))
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	err = json.NewEncoder(w).Encode(post)
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+}
+
+func (h *Handler) Vote(numVote int, userID, postID uint) error {
+	var err error
+	if numVote == 0 {
+		err = h.db.DeleteVoteByUserIDAndPostID(userID, postID)
+	} else {
+		vote := new(models.Vote)
+		voteDB := new(models.Vote)
+		vote.Vote = numVote
+		vote.PostID = postID
+		vote.UserID = userID
+		*voteDB, err = h.db.GetVoteByUserIDAndPostID(vote.UserID, vote.PostID)
+		if err != nil {
+			err = h.db.Vote(vote)
+		} else {
+			voteDB.Vote = vote.Vote
+			err = h.db.Vote(voteDB)
+		}
+	}
+	return err
+}
+
+func (h *Handler) UpdatePostScore(postID uint) (*models.Post, error) {
+	post, err := h.db.GetPostByID(postID)
+	if err != nil {
+		return nil, err
+	}
+	post.Score, post.UpvotePercentage = GetSumVotesAndUpvotePercentage(post.Votes)
+	err = h.db.UpdatePost(post)
+	return post, err
+}
+
+func GetSumVotesAndUpvotePercentage(votes []models.Vote) (int, int) {
+	sum := 0
+	upvote := 0
+
+	for _, vote := range votes {
+		sum += vote.Vote
+		if vote.Vote == 1 {
+			upvote++
+		}
+	}
+	return sum, 100 / len(votes) * upvote
+
 }

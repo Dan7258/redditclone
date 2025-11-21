@@ -18,6 +18,7 @@ type Post struct {
 	UpvotePercentage int       `json:"upvote_percentage,omitempty"`
 	Created          time.Time `json:"created,omitempty"`
 	Comments         []Comment `gorm:"foreignkey:PostID" json:"comments,omitempty"`
+	Votes            []Vote    `gorm:"foreignkey:PostID" json:"votes,omitempty"`
 }
 
 func (p *Post) MarshalJSON() ([]byte, error) {
@@ -25,6 +26,7 @@ func (p *Post) MarshalJSON() ([]byte, error) {
 		"id":                p.ID,
 		"title":             p.Title,
 		"author":            p.Author,
+		"votes":             p.Votes,
 		"category":          p.Category,
 		"score":             p.Score,
 		"views":             p.Views,

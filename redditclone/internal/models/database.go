@@ -15,7 +15,13 @@ type Model interface {
 	GetPostsByCategory(category string) []Post
 	GetPostByID(id uint) (*Post, error)
 	DeletePostByID(id uint) error
+	UpdatePost(post *Post) error
+	GetPostsByUsername(username string) []Post
 
 	CreateComment(comment *Comment) error
 	DeleteCommentByID(id uint) error
+
+	GetVoteByUserIDAndPostID(userID, postID uint) (Vote, error)
+	Vote(vote *Vote) error
+	DeleteVoteByUserIDAndPostID(userID, postID uint) error
 }

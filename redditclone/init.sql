@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS votes (
                                      id SERIAL PRIMARY KEY,
                                      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
                                      post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
-                                     vote INTEGER CHECK (vote IN (-1, 0, 1)),
+                                     vote INTEGER CHECK (vote IN (-1, 1)),
                                      created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
