@@ -340,6 +340,10 @@ func GetSumVotesAndUpvotePercentage(votes []models.Vote) (int, int) {
 			upvote++
 		}
 	}
-	return sum, 100 / len(votes) * upvote
+	upvotePercentage := 0
+	if len(votes) > 0 {
+		upvotePercentage = 100 / len(votes) * upvote
+	}
+	return sum, upvotePercentage
 
 }

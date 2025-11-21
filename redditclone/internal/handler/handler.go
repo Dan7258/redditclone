@@ -23,3 +23,11 @@ func jsonError(w http.ResponseWriter, status int, msg string) {
 	w.WriteHeader(status)
 	w.Write(resp)
 }
+
+func (h *Handler) MainPage(w http.ResponseWriter, r *http.Request) {
+	http.FileServer(http.Dir("web/html/")).ServeHTTP(w, r)
+}
+
+func (h *Handler) Static(w http.ResponseWriter, r *http.Request) {
+	http.StripPrefix("/static/", http.FileServer(http.Dir("web/"))).ServeHTTP(w, r)
+}
