@@ -9,6 +9,7 @@ type Model interface {
 	ConnectToDatabase() error
 	CreateUser(user *User) error
 	GetUserByUsername(username string) (*User, error)
+	GetUserWithPasswordByUsername(username string) (*User, error)
 
 	CreatePost(post *Post) error
 	GetAllPosts() []Post

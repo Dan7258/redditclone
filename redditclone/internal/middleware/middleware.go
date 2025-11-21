@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 	"redditclone/internal/models"
-	"redditclone/jwt"
+	"redditclone/pkg/jwt"
 )
 
 func Auth(next http.Handler) http.Handler {

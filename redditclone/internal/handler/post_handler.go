@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"redditclone/internal/models"
-	"redditclone/jwt"
+	"redditclone/pkg/jwt"
 	"strconv"
 )
 
@@ -49,7 +49,7 @@ func (h *Handler) GetPosts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
-func (h *Handler) GetPostById(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetPostByID(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	if idStr == "" {
 		jsonError(w, http.StatusBadRequest, "category not provided")
@@ -99,7 +99,7 @@ func (h *Handler) GetPostsByCategory(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
-func (h *Handler) DeletePostById(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DeletePostByID(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.Atoi(idStr)
 
@@ -178,7 +178,7 @@ func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
-func (h *Handler) DeleteCommentById(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DeleteCommentByID(w http.ResponseWriter, r *http.Request) {
 	postIdStr := r.PathValue("post_id")
 	commentIdStr := r.PathValue("comment_id")
 	if postIdStr == "" || commentIdStr == "" {

@@ -3,7 +3,6 @@ package jwt
 import (
 	"errors"
 	"github.com/golang-jwt/jwt/v5"
-	"log"
 	"net/http"
 	"os"
 	"redditclone/internal/models"
@@ -78,7 +77,6 @@ func GenerateJWT(user *models.User) (string, error) {
 		},
 		"exp": time.Now().Add(24 * time.Hour).Unix(),
 	}
-	log.Println(user)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(secretKey)
 }

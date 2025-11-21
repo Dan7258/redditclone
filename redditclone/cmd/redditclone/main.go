@@ -7,7 +7,7 @@ import (
 	"redditclone/internal/handler"
 	"redditclone/internal/repository"
 	"redditclone/internal/routes"
-	"redditclone/jwt"
+	"redditclone/pkg/jwt"
 	"time"
 )
 

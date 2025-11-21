@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"redditclone/internal/models"
-	"redditclone/jwt"
+	"redditclone/pkg/hash"
+	"redditclone/pkg/jwt"
 )
 
 type jwtResponse struct {
@@ -16,6 +17,11 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		jsonError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	user.Password, err = hash.HashPassword(user.Password)
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	err = h.db.CreateUser(user)
@@ -41,12 +47,16 @@ func (h *Handler) LoginUser(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	userInMemory, err := h.db.GetUserByUsername(user.Username)
+	userInDB, err := h.db.GetUserWithPasswordByUsername(user.Username)
 	if err != nil {
 		jsonError(w, http.StatusUnauthorized, "User not found")
 		return
 	}
-	token, err := jwt.GenerateJWT(userInMemory)
+	if !hash.CmpPasswordAndHash(user.Password, userInDB.Password) {
+		jsonError(w, http.StatusUnauthorized, "Incorrect password")
+		return
+	}
+	token, err := jwt.GenerateJWT(userInDB)
 	if err != nil {
 		jsonError(w, http.StatusInternalServerError, err.Error())
 		return
