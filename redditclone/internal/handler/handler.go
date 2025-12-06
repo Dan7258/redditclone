@@ -2,16 +2,21 @@ package handler
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
+	"os"
 	"redditclone/internal/models"
 )
 
 type Handler struct {
-	db models.Model
+	db     models.Model
+	Logger *slog.Logger
 }
 
 func InitHandler(model models.Model) *Handler {
-	return &Handler{model}
+	return &Handler{
+		db:     model,
+		Logger: slog.New(slog.NewJSONHandler(os.Stdout, nil))}
 }
 
 func jsonError(w http.ResponseWriter, status int, msg string) {

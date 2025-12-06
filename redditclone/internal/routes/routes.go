@@ -1,7 +1,9 @@
 package routes
 
 import (
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
+
 	"redditclone/internal/handler"
 	"redditclone/internal/middleware"
 )
@@ -25,7 +27,8 @@ func SetRoutes(h *handler.Handler) *http.ServeMux {
 	authMux.HandleFunc("DELETE /api/post/{id}", h.DeletePostByID)                      // удалить пост по id
 	authMux.HandleFunc("DELETE /api/post/{post_id}/{comment_id}", h.DeleteCommentByID) // удаление комментария у поста
 
-	mux.Handle("/api/", middleware.Auth(authMux))
+	mux.Handle("/api/", middleware.Metrics(middleware.Auth(authMux)))
 
+	mux.Handle("/metrics", promhttp.Handler())
 	return mux
 }

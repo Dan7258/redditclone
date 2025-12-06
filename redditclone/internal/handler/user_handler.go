@@ -24,9 +24,11 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	h.Logger.Debug("Registering user", user)
 	err = h.db.CreateUser(user)
 	if err != nil {
 		jsonError(w, http.StatusInternalServerError, err.Error())
+		h.Logger.Error("Registering user", user)
 		return
 	}
 	token, err := jwt.GenerateJWT(user)

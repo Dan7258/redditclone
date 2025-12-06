@@ -2,10 +2,15 @@ package middleware
 
 import (
 	"context"
+	"github.com/prometheus/client_golang/prometheus"
+	"log/slog"
 	"net/http"
-	"redditclone/internal/models"
+	"os"
 	"redditclone/pkg/jwt"
+	"time"
 )
+
+var Duration *prometheus.HistogramVec
 
 func Auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -25,7 +30,21 @@ func Auth(next http.Handler) http.Handler {
 	})
 }
 
-func GetUserFromContext(ctx context.Context) (*models.User, bool) {
-	user, ok := ctx.Value("user").(*models.User)
-	return user, ok
+func Logger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r)
+		logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+		logger.Info(r.RequestURI)
+	})
+}
+
+func Metrics(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		next.ServeHTTP(w, r)
+		Duration.With(prometheus.Labels{
+			"method": r.Method,
+			"path":   r.URL.Path,
+		}).Observe(time.Since(start).Seconds())
+	})
 }
